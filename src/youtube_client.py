@@ -6,10 +6,14 @@ import googleapiclient.discovery
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 
+import quota_tracker
+
 
 SCOPES = ["https://www.googleapis.com/auth/youtube.force-ssl"]
-CLIENT_SECRET_FILE = Path("client_secret.json")
-TOKEN_FILE = Path("token.json")
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+SECRETS_DIR = PROJECT_ROOT / "secrets"
+CLIENT_SECRET_FILE = SECRETS_DIR / "client_secret.json"
+TOKEN_FILE = SECRETS_DIR / "token.json"
 OAUTH_CALLBACK_PORT = 8080
 OAUTH_REDIRECT_URI = f"http://localhost:{OAUTH_CALLBACK_PORT}/"
 
@@ -27,7 +31,7 @@ def get_client_secret_status():
         return {
             "ok": False,
             "type": None,
-            "message": "client_secret.json 파일이 없습니다."
+            "message": "secrets/client_secret.json 파일이 없습니다."
         }
 
     import json
@@ -79,13 +83,14 @@ def get_authenticated_service():
 
     if not credentials or not credentials.valid:
         if not CLIENT_SECRET_FILE.exists():
-            raise FileNotFoundError("client_secret.json 파일을 프로젝트 루트에 넣어주세요.")
+            raise FileNotFoundError("client_secret.json 파일을 secrets/ 폴더에 넣어주세요.")
 
         flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
             str(CLIENT_SECRET_FILE),
             SCOPES
         )
         credentials = flow.run_local_server(port=OAUTH_CALLBACK_PORT)
+        SECRETS_DIR.mkdir(parents=True, exist_ok=True)
         TOKEN_FILE.write_text(credentials.to_json(), encoding="utf-8")
 
     return googleapiclient.discovery.build("youtube", "v3", credentials=credentials)
@@ -96,12 +101,14 @@ def list_my_playlists(youtube):
     page_token = None
 
     while True:
-        response = youtube.playlists().list(
+        request = youtube.playlists().list(
             part="snippet,contentDetails,status",
             mine=True,
             maxResults=50,
             pageToken=page_token
-        ).execute()
+        )
+        quota_tracker.record_quota("playlists.list", 1, "내 재생목록 조회")
+        response = request.execute()
 
         for item in response.get("items", []):
             snippet = item.get("snippet", {})
@@ -126,12 +133,14 @@ def get_playlist_videos(youtube, playlist_id):
     page_token = None
 
     while True:
-        response = youtube.playlistItems().list(
+        request = youtube.playlistItems().list(
             part="snippet,contentDetails",
             playlistId=playlist_id,
             maxResults=50,
             pageToken=page_token
-        ).execute()
+        )
+        quota_tracker.record_quota("playlistItems.list", 1, playlist_id)
+        response = request.execute()
 
         for item in response.get("items", []):
             snippet = item.get("snippet", {})
@@ -155,7 +164,7 @@ def get_playlist_videos(youtube, playlist_id):
 
 
 def create_playlist(youtube, title, description="", privacy_status="private"):
-    response = youtube.playlists().insert(
+    request = youtube.playlists().insert(
         part="snippet,status",
         body={
             "snippet": {
@@ -166,12 +175,14 @@ def create_playlist(youtube, title, description="", privacy_status="private"):
                 "privacyStatus": privacy_status
             }
         }
-    ).execute()
+    )
+    quota_tracker.record_quota("playlists.insert", 50, title)
+    response = request.execute()
     return response["id"]
 
 
 def add_video_to_playlist(youtube, playlist_id, video_id):
-    response = youtube.playlistItems().insert(
+    request = youtube.playlistItems().insert(
         part="snippet",
         body={
             "snippet": {
@@ -182,5 +193,7 @@ def add_video_to_playlist(youtube, playlist_id, video_id):
                 }
             }
         }
-    ).execute()
+    )
+    quota_tracker.record_quota("playlistItems.insert", 50, f"{playlist_id}:{video_id}")
+    response = request.execute()
     return response.get("id", "")

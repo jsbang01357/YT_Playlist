@@ -12,16 +12,18 @@ import googleapiclient.errors
 
 # 1. API 클라이언트 설정
 scopes = ["https://www.googleapis.com/auth/youtube.force-ssl"]
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+CLIENT_SECRET_FILE = PROJECT_ROOT / "secrets" / "client_secret.json"
+EXCEL_FILE = PROJECT_ROOT / "inputs" / "Categorized_YouTube_Playlist.xlsx"
 
 def get_authenticated_service():
     # GCP에서 다운로드받은 OAuth 2.0 클라이언트 ID 파일 필요
     os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
     api_service_name = "youtube"
     api_version = "v3"
-    client_secrets_file = "client_secret.json" 
 
     flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
-        client_secrets_file, scopes)
+        str(CLIENT_SECRET_FILE), scopes)
     credentials = flow.run_local_server(port=0)
     
     return googleapiclient.discovery.build(api_service_name, api_version, credentials=credentials)
@@ -150,7 +152,7 @@ def extract_playlist_urls(youtube, playlist_input, output_path=None):
 
 # 실행 제어부
 def create_playlists_from_excel(youtube):
-    df = pd.read_excel('Categorized_YouTube_Playlist.xlsx', sheet_name='전체 목록 (All Songs)')
+    df = pd.read_excel(EXCEL_FILE, sheet_name='전체 목록 (All Songs)')
     
     # 카테고리별로 그룹화
     grouped = df.groupby('분류 (Category)')

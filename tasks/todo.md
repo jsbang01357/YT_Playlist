@@ -22,6 +22,10 @@
 - [x] Add CSV upload parser for playlist creation.
 - [x] Add Streamlit CSV playlist creation tab.
 - [x] Verify CSV import samples and Python compilation.
+- [x] Add local daily quota usage tracker.
+- [x] Record quota units from YouTube API calls.
+- [x] Show today's estimated quota in the sidebar.
+- [x] Verify quota tracking calculations.
 
 ## Summary
 
@@ -33,3 +37,4 @@
 - Added a local Streamlit app for OAuth connection status, playlist listing, playlist detail export, playlist creation, bulk video URL add, URL extraction, and JSON caching.
 - Diagnosed Web application OAuth clients and fixed the local callback URI to `http://localhost:8080/`.
 - Added CSV upload playlist creation that accepts exported `title, video_id, url` files and URL-only CSV files.
+- Added local daily quota tracking in `data/quota_usage.json`, sidebar quota display, and batch operation estimates.

@@ -3,6 +3,7 @@ import streamlit as st
 from googleapiclient.errors import HttpError
 
 import playlist_tools
+import quota_tracker
 import storage
 import youtube_client
 
@@ -59,6 +60,17 @@ def render_sidebar():
         youtube_client.reset_saved_token()
         st.session_state.pop("youtube", None)
         st.sidebar.success("token.json을 삭제했습니다.")
+
+    st.sidebar.divider()
+    quota_usage = quota_tracker.get_day_usage()
+    st.sidebar.header("Quota")
+    st.sidebar.metric("오늘 추정 사용량", f"{quota_usage['used']:,} / {quota_usage['limit']:,}")
+    st.sidebar.progress(min(quota_usage["usage_ratio"], 1.0))
+    st.sidebar.caption(f"남은 추정 quota: {quota_usage['remaining']:,} units")
+    if quota_usage["used"] >= quota_usage["limit"]:
+        st.sidebar.error("오늘 기본 quota를 모두 쓴 것으로 기록되어 있습니다.")
+    elif quota_usage["used"] >= quota_usage["limit"] * 0.8:
+        st.sidebar.warning("오늘 quota 사용량이 80%를 넘었습니다.")
 
 
 def render_playlist_list():
@@ -144,6 +156,7 @@ def render_create_playlist():
     title = st.text_input("제목")
     description = st.text_area("설명", height=120)
     privacy_status = st.selectbox("공개 범위", ["private", "unlisted", "public"])
+    st.caption("예상 quota: 50 units")
 
     if st.button("재생목록 생성", type="primary"):
         if not title.strip():
@@ -179,6 +192,8 @@ def render_add_videos():
     parsed = playlist_tools.parse_video_inputs(raw_urls, remove_duplicates=remove_duplicates)
     if parsed:
         st.dataframe(pd.DataFrame(parsed), hide_index=True, use_container_width=True)
+        valid_count = len([item for item in parsed if item["status"] == "대기" and item["video_id"]])
+        st.caption(f"예상 quota: {quota_tracker.estimate_video_add(valid_count):,} units")
 
     if st.button("추가 실행", type="primary"):
         valid_items = [item for item in parsed if item["status"] == "대기" and item["video_id"]]
@@ -219,6 +234,8 @@ def render_create_from_csv():
         try:
             parsed = playlist_tools.parse_video_csv(uploaded_file.getvalue(), remove_duplicates=remove_duplicates)
             st.dataframe(pd.DataFrame(parsed), hide_index=True, use_container_width=True)
+            valid_count = len([item for item in parsed if item["status"] == "대기" and item["video_id"]])
+            st.caption(f"예상 quota: {quota_tracker.estimate_playlist_create(valid_count):,} units")
         except Exception as exc:
             st.error(str(exc))
             return

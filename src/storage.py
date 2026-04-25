@@ -3,7 +3,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
-DATA_DIR = Path("data")
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+DATA_DIR = PROJECT_ROOT / "data"
 PLAYLIST_CACHE_PATH = DATA_DIR / "playlists.json"
 
 

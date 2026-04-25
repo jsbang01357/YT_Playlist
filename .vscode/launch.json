@@ -8,7 +8,7 @@
             "module": "streamlit",
             "args": [
                 "run",
-                "app.py",
+                "src/app.py",
                 "--server.port",
                 "8503",
                 "--server.address",
