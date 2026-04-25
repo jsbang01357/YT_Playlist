@@ -26,6 +26,9 @@
 - [x] Record quota units from YouTube API calls.
 - [x] Show today's estimated quota in the sidebar.
 - [x] Verify quota tracking calculations.
+- [x] Organize root files into `src/`, `scripts/`, `inputs/`, and `secrets/`.
+- [x] Update app, CLI, and VS Code launch paths after the move.
+- [x] Verify Streamlit starts from `src/app.py`.
 
 ## Summary
 
@@ -38,3 +41,4 @@
 - Diagnosed Web application OAuth clients and fixed the local callback URI to `http://localhost:8080/`.
 - Added CSV upload playlist creation that accepts exported `title, video_id, url` files and URL-only CSV files.
 - Added local daily quota tracking in `data/quota_usage.json`, sidebar quota display, and batch operation estimates.
+- Moved Streamlit source files into `src/`, the legacy CLI into `scripts/`, the Excel input into `inputs/`, and OAuth files into `secrets/`; updated path constants and launch settings.
