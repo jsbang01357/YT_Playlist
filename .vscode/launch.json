@@ -1,0 +1,28 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Streamlit (YT_Playlist)",
+            "type": "python",
+            "request": "launch",
+            "module": "streamlit",
+            "args": [
+                "run",
+                "app.py",
+                "--server.port",
+                "8503",
+                "--server.address",
+                "localhost",
+                "--server.headless",
+                "false"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "justMyCode": true,
+            "serverReadyAction": {
+                "pattern": "Local URL: (http://localhost:8503.*)",
+                "action": "openExternally"
+            }
+        }
+    ]
+}
